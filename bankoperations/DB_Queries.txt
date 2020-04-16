@@ -1,0 +1,142 @@
+   
+   
+            ######DATABASE QUERIES########
+			   by- (vishal Narote)
+   
+   
+******************Tables***********************
+-----------
+-----------
+Users:
+
+create table users
+(
+userid int ,
+pswd varchar(20) not null,
+usernm varchar(20),
+usertype varchar(20) default 'customer',
+userstatus varchar(20) default 'active';
+);
+
+
+---------------------------------------------------------------------------------------
+
+userpersonal:
+
+create table userpersonal
+(
+useid int ,
+join_dt date,
+gender varchar(10),
+mobile varchar(10) unique,
+email varchar(130) ,
+age int check(age>=18),
+city varchar(20)
+);
+
+---------------------------------------------------------------------------------------------
+accounts:
+
+create table accounts
+(
+accno int primary key,
+accnm varchar(30),
+acctype varchar(30),
+balance double,
+opendate date
+);
+
+----------------------------------------------------------------------------------------------------
+acctransaction:
+
+create table acctransaction
+(
+transno int auto_increment,
+transdt date,
+accno int foreign key(accno) references accounts(accno),
+transactiontype varchar(30),
+amount double
+);
+
+--------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+
+*************Store procedure****************
+for electric bill
+accno=1009 is the a/c no of MSEDCL corp.
+
+DELIMITER //
+CREATE PROCEDURE paybill (sacc int,accno,amt double)
+BEGIN
+declare tot double;
+select balance-amt into tot from accounts where accno=sacc;
+if tot>=0 then
+update accounts set balance=balance-amt where accno=sacc;
+update accounts set balance=balance+amt where accno=1009;
+end if;
+END//
+DELIMITER ;
+
+------------------------------------------------------------------------------------
+
+
+DELIMITER //
+CREATE PROCEDURE newacc(ano int,anm varchar(30),atyp varchar(10),bal float)
+BEGIN
+insert into accounts values(ano,anm,atyp,bal);
+END//
+DELIMITER ;
+
+-----------------------------------------------------------------------
+
+DELIMITER //
+CREATE PROCEDURE trans (sacc int,dacc int,amt float)
+BEGIN
+declare tot float;
+select balance-amt into tot from accounts where accno=sacc;
+if tot>=0 then
+update accounts set balance=balance-amt where accno=sacc;
+update accounts set balance=balance+amt where accno=dacc;
+end if;
+END//
+DELIMITER ;
+call trans(1017,1013,5500);
+delimiter //
+
+------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------
+
+
+**************Triggers******************
+Transaction:
+
+create trigger transact
+after insert
+on acctrans
+for each row
+begin
+if new.trtype='deposit' then
+update accounts set balance=balance+new.amt where
+accounts.accno=new.accno;
+end if;
+if new.trtype='withdraw' then
+update accounts set balance=balance-new.amt where
+accounts.accno=new.accno;
+end if;
+END//
+DELIMITER ;
+ 
+----------------------------------------------------------------------------- 
+ delete account
+ 
+DELIMITER //
+create trigger copyacc
+after delete
+on accounts
+for each row
+begin
+insert into acchistory set
+accno=old.accno,accnm=old.accnm,acctype=old.acctype,balance=old.balance;
+END//
+DELIMITER ;
